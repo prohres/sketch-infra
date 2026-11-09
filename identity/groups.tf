@@ -21,7 +21,7 @@ data "aws_identitystore_user" "me" {
   alternate_identifier {
     unique_attribute {
       attribute_path  = "UserName"
-      attribute_value = "sketch-admin"
+      attribute_value = "prohres"
     }
   }
 }
