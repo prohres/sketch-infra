@@ -34,3 +34,65 @@ resource "aws_organizations_policy_attachment" "lab_guardrails_labs" {
   policy_id = aws_organizations_policy.lab_guardrails.id
   target_id = aws_organizations_organizational_unit.labs.id
 }
+
+# Target structure (expand phase). The legacy Labs OU is removed in a follow-up PR.
+resource "aws_organizations_organizational_unit" "infrastructure" {
+  name      = "Infrastructure"
+  parent_id = local.root_id
+}
+
+resource "aws_organizations_organizational_unit" "workloads" {
+  name      = "Workloads"
+  parent_id = local.root_id
+}
+
+resource "aws_organizations_organizational_unit" "prod" {
+  name      = "Prod"
+  parent_id = aws_organizations_organizational_unit.workloads.id
+}
+
+resource "aws_organizations_organizational_unit" "nonprod" {
+  name      = "NonProd"
+  parent_id = aws_organizations_organizational_unit.workloads.id
+}
+
+resource "aws_organizations_organizational_unit" "suspended" {
+  name      = "Suspended"
+  parent_id = local.root_id
+}
+
+resource "aws_organizations_policy" "security_baseline" {
+  name        = "SecurityBaseline"
+  description = "Applies to every member account: approved regions, audit protection, no long-lived IAM credentials"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/../policies/security-baseline.json")
+}
+
+resource "aws_organizations_policy" "cost_guardrails" {
+  name        = "CostGuardrails"
+  description = "Denies GPU, bare metal and very large EC2 instance types"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/../policies/cost-guardrails.json")
+}
+
+resource "aws_organizations_policy" "deny_all" {
+  name        = "DenyAll"
+  description = "Quarantine for accounts pending closure"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/../policies/deny-all.json")
+}
+
+resource "aws_organizations_policy_attachment" "security_baseline_root" {
+  policy_id = aws_organizations_policy.security_baseline.id
+  target_id = local.root_id
+}
+
+resource "aws_organizations_policy_attachment" "cost_guardrails_root" {
+  policy_id = aws_organizations_policy.cost_guardrails.id
+  target_id = local.root_id
+}
+
+resource "aws_organizations_policy_attachment" "deny_all_suspended" {
+  policy_id = aws_organizations_policy.deny_all.id
+  target_id = aws_organizations_organizational_unit.suspended.id
+}

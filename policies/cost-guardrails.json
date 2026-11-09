@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyExpensiveEC2",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringLike": {
+          "ec2:InstanceType": [
+            "p*",
+            "g*",
+            "x*",
+            "u-*",
+            "*.metal*",
+            "*.12xlarge",
+            "*.16xlarge",
+            "*.24xlarge",
+            "*.32xlarge",
+            "*.48xlarge"
+          ]
+        }
+      }
+    }
+  ]
+}
