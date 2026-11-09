@@ -6,11 +6,6 @@ locals {
   root_id = data.aws_organizations_organization.this.roots[0].id
 }
 
-resource "aws_organizations_organizational_unit" "labs" {
-  name      = "Labs"
-  parent_id = local.root_id
-}
-
 resource "aws_organizations_policy" "deny_leave_and_close_account" {
   name        = "DenyLeaveAndCloseAccount"
   description = "Prevents member accounts from leaving the organization and self closure"
@@ -18,24 +13,12 @@ resource "aws_organizations_policy" "deny_leave_and_close_account" {
   content     = file("${path.module}/../policies/deny-leave-and-close-account.json")
 }
 
-resource "aws_organizations_policy" "lab_guardrails" {
-  name        = "LabGuardrails"
-  description = "Lab guardrails: regions, audit, expensive EC2, no IAM keys"
-  type        = "SERVICE_CONTROL_POLICY"
-  content     = file("${path.module}/../policies/lab-guardrails.json")
-}
-
 resource "aws_organizations_policy_attachment" "deny_leave_root" {
   policy_id = aws_organizations_policy.deny_leave_and_close_account.id
   target_id = local.root_id
 }
 
-resource "aws_organizations_policy_attachment" "lab_guardrails_labs" {
-  policy_id = aws_organizations_policy.lab_guardrails.id
-  target_id = aws_organizations_organizational_unit.labs.id
-}
-
-# Target structure (expand phase). The legacy Labs OU is removed in a follow-up PR.
+# Target structure: Infrastructure, Workloads (Prod / NonProd), Suspended
 resource "aws_organizations_organizational_unit" "infrastructure" {
   name      = "Infrastructure"
   parent_id = local.root_id
