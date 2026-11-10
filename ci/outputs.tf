@@ -7,3 +7,8 @@ output "org_role_arns" {
   description = "Roles the workflows chain into in the management account"
   value       = { for name, role in aws_iam_role.org : name => role.arn }
 }
+
+output "plan_bucket" {
+  description = "Private bucket for saved plans (plan-bucket input of the apply workflow)"
+  value       = aws_s3_bucket.plans.bucket
+}
