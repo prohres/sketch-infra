@@ -17,7 +17,7 @@ jobs:
       contents: read
       id-token: write
       pull-requests: write
-    uses: prohres/ci-templates/.github/workflows/tf-plan.yml@v1
+    uses: prohres/ci-templates/.github/workflows/tf-plan.yml@feat/static-checks # canary: back to @v1 after v1.2.0
     with:
       stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
       gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
