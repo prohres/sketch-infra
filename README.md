@@ -57,6 +57,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | `bootstrap/` | state bucket (versioned, SSE-S3, S3-native locking) | `bootstrap/terraform.tfstate` |
 | `org/` | OUs, SCPs, accounts | `org/terraform.tfstate` |
 | `identity/` | groups, permission sets, account assignments | `identity/terraform.tfstate` |
+| `ci/` | GitHub Actions OIDC provider and CI roles (sketch-admin → sketch-root); applied manually, never by CI | `ci/terraform.tfstate` |
 | `policies/` | SCP documents (JSON) | — |
 
 ## Workflow
@@ -80,6 +81,8 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | S3 `use_lockfile` instead of DynamoDB | native locking since Terraform 1.10, DynamoDB locking is deprecated |
 | Manual resources adopted with `import {}`, restructuring via expand → contract | zero-diff adoption and no window without guardrails |
 | No AWS profile in code | credentials come from the environment (`AWS_PROFILE` locally, OIDC role in CI); `allowed_account_ids` still pins the target account |
+| CI identity in `sketch-admin`, two-hop role chain into the management account | the management account trusts one narrow role per action; the OIDC `sub` pins PRs and develop to plan, the `prod` environment to apply |
+| CI writes only the `org/` and `identity/` state | CI can't change its own trust roots (`ci/`) or the state bucket (`bootstrap/`) |
 
 ## Roadmap
 
