@@ -1,0 +1,25 @@
+name: terraform
+
+on:
+  pull_request:
+    branches: [develop]
+
+# A newer push to the same PR supersedes the running plan
+concurrency:
+  group: terraform-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: {} # nothing by default; the job below grants only what the template needs
+
+jobs:
+  plan:
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    uses: prohres/ci-templates/.github/workflows/tf-plan.yml@v1
+    with:
+      stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
+      gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
+      target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
+      target-account-id: "183691668268"
