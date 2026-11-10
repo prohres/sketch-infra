@@ -101,6 +101,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 
 - [ ] Delegated administration from `sketch-admin`, cross-account roles for Terraform
 - [x] CI: plan on PR, apply after merge (GitHub Actions + OIDC)
+- [x] Static checks (tflint, checkov), daily drift detection, plan only changed stacks
 - [ ] OU Security: log-archive and audit accounts, organization CloudTrail, GuardDuty
 - [ ] OU Policy Staging for testing SCPs
 - [ ] Break-glass access to prod
