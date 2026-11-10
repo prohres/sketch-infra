@@ -62,9 +62,10 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 ## Workflow
 
 1. Branch from `develop` (protected: PR required, no force push).
-2. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
-3. `terraform apply <stack>.tfplan` — apply exactly the reviewed plan.
-4. Follow-up `terraform plan` must show *No changes*; open the PR with the results.
+2. Credentials: `aws sso login --sso-session sketch` and `export AWS_PROFILE=sketch-root`.
+3. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
+4. `terraform apply <stack>.tfplan` — apply exactly the reviewed plan.
+5. Follow-up `terraform plan` must show *No changes*; open the PR with the results.
 
 ## Design decisions
 
@@ -78,6 +79,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | Identity stack reads accounts from Organizations, not from the org state | stacks stay independent |
 | S3 `use_lockfile` instead of DynamoDB | native locking since Terraform 1.10, DynamoDB locking is deprecated |
 | Manual resources adopted with `import {}`, restructuring via expand → contract | zero-diff adoption and no window without guardrails |
+| No AWS profile in code | credentials come from the environment (`AWS_PROFILE` locally, OIDC role in CI); `allowed_account_ids` still pins the target account |
 
 ## Roadmap
 
