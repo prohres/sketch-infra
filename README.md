@@ -69,7 +69,8 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 2. Credentials: `aws sso login --sso-session sketch` and `export AWS_PROFILE=sketch-root`.
 3. `terraform init -backend-config=../backend.hcl` in the stack directory.
 4. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
-5. Open the PR — CI runs tflint and checkov (no cloud access), then posts its own plan per stack as a comment.
+5. Open the PR — CI runs tflint and checkov (no cloud access), plans only the stacks the PR changed and posts
+   the plan per stack as a comment; `plan / terraform-ok` is the required check.
 6. `org/`, `identity/`: after merge CI plans the merged commit, waits for approval in the `prod` environment
    (plan in the job summary), applies exactly that plan and checks that a follow-up plan is clean.
 7. `bootstrap/`, `ci/` (manual only): `terraform apply <stack>.tfplan` before the PR, follow-up plan must show *No changes*.
@@ -94,6 +95,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | Saved plans in a private S3 bucket (`ci/`), not GitHub artifacts | a plan file holds values in clear text and artifacts of a public repo are downloadable by anyone; 7-day lifecycle, TLS only |
 | Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
 | Drift check: full plan (not `-refresh-only`), no auto-apply, issue holds resource addresses only | catches manual changes and merged-but-unapplied code; drift may be a deliberate hotfix, so a human decides; issues of a public repo are public, the full plan stays in the job summary |
+| Plan only changed stacks (`<stack>/`, plus `policies/` for `org`; shared files plan all), one aggregator required check `plan / terraform-ok` | no AWS calls for unrelated changes; a skipped workflow (`paths:`) or skipped job would leave a required check waiting forever |
 
 ## Roadmap
 
