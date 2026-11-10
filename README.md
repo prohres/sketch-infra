@@ -69,7 +69,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 2. Credentials: `aws sso login --sso-session sketch` and `export AWS_PROFILE=sketch-root`.
 3. `terraform init -backend-config=../backend.hcl` in the stack directory.
 4. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
-5. Open the PR — CI posts its own plan per stack as a comment.
+5. Open the PR — CI runs tflint and checkov (no cloud access), then posts its own plan per stack as a comment.
 6. `org/`, `identity/`: after merge CI plans the merged commit, waits for approval in the `prod` environment
    (plan in the job summary), applies exactly that plan and checks that a follow-up plan is clean.
 7. `bootstrap/`, `ci/` (manual only): `terraform apply <stack>.tfplan` before the PR, follow-up plan must show *No changes*.
@@ -91,6 +91,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | CI writes only the `org/` and `identity/` state | CI can't change its own trust roots (`ci/`) or the state bucket (`bootstrap/`) |
 | Partial backend config (`backend.hcl`) | backend blocks can't use variables; bucket, region and locking live in one file, used the same way locally and in CI |
 | Saved plans in a private S3 bucket (`ci/`), not GitHub artifacts | a plan file holds values in clear text and artifacts of a public repo are downloadable by anyone; 7-day lifecycle, TLS only |
+| Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
 
 ## Roadmap
 

@@ -6,6 +6,9 @@ locals {
 }
 
 resource "aws_s3_bucket" "plans" {
+  #checkov:skip=CKV_AWS_18:Access logs need a separate log bucket; revisit with a log-archive account
+  #checkov:skip=CKV_AWS_145:SSE-S3 on purpose (no KMS cost); access is limited by IAM
+  #checkov:skip=CKV_AWS_21:Plans are transient (expire after 7 days); old versions have no value
   bucket        = local.plan_bucket
   force_destroy = true # transient data only, unlike the state bucket
 }

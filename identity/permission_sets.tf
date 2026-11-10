@@ -27,6 +27,7 @@ resource "aws_ssoadmin_permission_set" "this" {
 }
 
 resource "aws_ssoadmin_managed_policy_attachment" "this" {
+  #checkov:skip=CKV_AWS_274:AdministratorAccess permission set is the intended admin role for SSO users, not for CI
   for_each           = local.permission_sets
   instance_arn       = local.instance_arn
   permission_set_arn = aws_ssoadmin_permission_set.this[each.key].arn
