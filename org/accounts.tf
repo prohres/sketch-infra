@@ -1,10 +1,14 @@
 variable "account_emails" {
-  description = "Root user email per member account, kept out of git in accounts.auto.tfvars"
+  description = "Root user email for accounts not yet in Organizations, kept out of git in accounts.auto.tfvars"
   type        = map(string)
   sensitive   = true
+  default     = {} # existing accounts take their email from Organizations, so CI needs no secret
 }
 
 locals {
+  # Organizations is the source of truth for accounts that already exist
+  existing_emails = { for account in data.aws_organizations_organization.this.accounts : account.name => account.email }
+
   accounts = {
     "sketch-admin" = { ou = aws_organizations_organizational_unit.infrastructure.id }
     "sketch-dev"   = { ou = aws_organizations_organizational_unit.nonprod.id }
@@ -15,7 +19,7 @@ locals {
 resource "aws_organizations_account" "this" {
   for_each          = local.accounts
   name              = each.key
-  email             = var.account_emails[each.key]
+  email             = sensitive(merge(var.account_emails, local.existing_emails)[each.key]) # public repo: keep emails out of CI logs
   parent_id         = each.value.ou
   close_on_deletion = false
 

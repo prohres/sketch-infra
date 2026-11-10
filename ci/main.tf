@@ -1,6 +1,7 @@
 # This stack holds CI's own trust roots, so it is applied manually (like bootstrap/), never by CI.
 locals {
-  repo            = "prohres/sketch-infra"
+  # Immutable subject (owner and repo IDs): a re-created repo with the same name can't reuse these roles
+  repo_sub        = "repo:prohres@38884861/sketch-infra@1451086492"
   root_account_id = "183691668268"
   state_bucket    = "sketch-tfstate-183691668268"
 

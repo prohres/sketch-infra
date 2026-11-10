@@ -59,14 +59,17 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | `identity/` | groups, permission sets, account assignments | `identity/terraform.tfstate` |
 | `ci/` | GitHub Actions OIDC provider and CI roles (sketch-admin → sketch-root); applied manually, never by CI | `ci/terraform.tfstate` |
 | `policies/` | SCP documents (JSON) | — |
+| `backend.hcl` | shared backend settings (bucket, region, locking); each stack keeps only its `key` | — |
+| `.github/workflows/terraform.yml` | plan for `org/` and `identity/` on every PR via [prohres/ci-templates](https://github.com/prohres/ci-templates) | — |
 
 ## Workflow
 
 1. Branch from `develop` (protected: PR required, no force push).
 2. Credentials: `aws sso login --sso-session sketch` and `export AWS_PROFILE=sketch-root`.
-3. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
-4. `terraform apply <stack>.tfplan` — apply exactly the reviewed plan.
-5. Follow-up `terraform plan` must show *No changes*; open the PR with the results.
+3. `terraform init -backend-config=../backend.hcl` in the stack directory.
+4. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
+5. `terraform apply <stack>.tfplan` — apply exactly the reviewed plan.
+6. Follow-up `terraform plan` must show *No changes*; open the PR — CI posts its own plan per stack as a comment.
 
 ## Design decisions
 
@@ -83,6 +86,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | No AWS profile in code | credentials come from the environment (`AWS_PROFILE` locally, OIDC role in CI); `allowed_account_ids` still pins the target account |
 | CI identity in `sketch-admin`, two-hop role chain into the management account | the management account trusts one narrow role per action; the OIDC `sub` pins PRs and develop to plan, the `prod` environment to apply |
 | CI writes only the `org/` and `identity/` state | CI can't change its own trust roots (`ci/`) or the state bucket (`bootstrap/`) |
+| Partial backend config (`backend.hcl`) | backend blocks can't use variables; bucket, region and locking live in one file, used the same way locally and in CI |
 
 ## Roadmap
 

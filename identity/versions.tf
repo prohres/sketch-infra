@@ -5,11 +5,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "sketch-tfstate-183691668268"
-    key          = "identity/terraform.tfstate"
-    region       = "eu-central-1"
-    encrypt      = true
-    use_lockfile = true
+    key = "identity/terraform.tfstate" # shared settings: ../backend.hcl
   }
 }
 
