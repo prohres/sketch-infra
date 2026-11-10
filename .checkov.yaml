@@ -1,0 +1,5 @@
+# Read by the lint job of ci-templates tf-plan.yml. Repo-wide decisions only;
+# resource-specific skips live inline next to the resource (#checkov:skip=ID:reason).
+skip-check:
+  - CKV2_AWS_62 # S3 event notifications: nothing consumes bucket events here
+  - CKV_AWS_144 # S3 cross-region replication: single-region lab; state is protected by versioning

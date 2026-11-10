@@ -14,6 +14,8 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "tfstate" {
+  #checkov:skip=CKV_AWS_18:Access logs need a separate log bucket; revisit with a log-archive account
+  #checkov:skip=CKV_AWS_145:SSE-S3 on purpose (no KMS cost); access is limited by IAM
   bucket = "sketch-tfstate-183691668268" # account id suffix keeps the name globally unique
   lifecycle { prevent_destroy = true }   # protect all stacks' state from accidental destroy
 }
@@ -45,6 +47,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
     status = "Enabled"
     filter {}
     noncurrent_version_expiration { noncurrent_days = 90 } # don't keep old versions forever
+    abort_incomplete_multipart_upload { days_after_initiation = 1 }
   }
 }
 
