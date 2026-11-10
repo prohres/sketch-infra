@@ -7,7 +7,6 @@ terraform {
 
 provider "aws" {
   region              = "eu-central-1"
-  profile             = "sketch-root"
   allowed_account_ids = ["183691668268"] # guardrail: management account only
   default_tags {
     tags = { project = "sketch", stack = "bootstrap", managed-by = "terraform" }
