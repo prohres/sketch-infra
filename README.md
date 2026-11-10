@@ -76,6 +76,31 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 7. `bootstrap/`, `ci/` (manual only): `terraform apply <stack>.tfplan` before the PR, follow-up plan must show *No changes*.
 8. Daily drift check (`org/`, `identity/`): a drifted stack gets a "Drift detected: <stack>" issue; fix by apply or by changing the code.
 
+## Accounts
+
+Lightweight account vending with an AFT-style request flow: a pull request is the account request,
+the pipeline creates the account, and access comes from the identity stack.
+
+One-time setup (management account, by hand):
+- Private email template: one line with an `{account}` placeholder at
+  `s3://sketch-tfstate-183691668268/config/account-email-template.txt` (`--content-type text/plain`).
+  It is not in git; if lost, write it again from the same rule.
+- Centralized root access: `aws organizations enable-aws-service-access --service-principal iam.amazonaws.com`,
+  `aws iam enable-organizations-root-credentials-management`, `aws iam enable-organizations-root-sessions`.
+
+Add an account (one per PR: parallel CreateAccount requests can hit the in-progress limit):
+1. `org/`: add a line to `local.accounts` (name + OU) → PR → plan → approval → apply.
+2. `identity/`: add the account to `access_matrix` in a second PR (the identity stack plans against
+   Organizations, so the account must exist first).
+
+Remove an account:
+1. `identity/`: drop its assignments.
+2. `org/`: move the name from `local.accounts` to `local.closing_accounts` with a `moved {}` block →
+   apply moves it to Suspended (DenyAll SCP).
+3. `org/`: delete the name from `local.closing_accounts` → apply closes the account (`CloseAccount`).
+   A closed account's email can't be reused, so neither can its name; it counts toward the account
+   quota for 90 days.
+
 ## Design decisions
 
 | Decision | Why |
@@ -96,6 +121,8 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
 | Drift check: full plan (not `-refresh-only`), no auto-apply, issue holds resource addresses only | catches manual changes and merged-but-unapplied code; drift may be a deliberate hotfix, so a human decides; issues of a public repo are public, the full plan stays in the job summary |
 | Plan only changed stacks (`<stack>/`, plus `policies/` for `org`; shared files plan all), one aggregator required check `plan / terraform-ok` | no AWS calls for unrelated changes; a skipped workflow (`paths:`) or skipped job would leave a required check waiting forever |
+| Root emails from a private one-line template in the state bucket, checked by preconditions | adding an account is one line of code; the address is never in git or CI secrets; a wrong template fails the plan with a message that names the account, not the address, before an email change could replace (close) an account |
+| Centralized root access, enabled by hand | new member accounts have no root credentials, so knowing a root email is no way in |
 
 ## Roadmap
 
