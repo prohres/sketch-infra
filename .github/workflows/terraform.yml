@@ -17,9 +17,11 @@ jobs:
       contents: read
       id-token: write
       pull-requests: write
-    uses: prohres/ci-templates/.github/workflows/tf-plan.yml@v1
+    uses: prohres/ci-templates/.github/workflows/tf-plan.yml@feat/changed-stacks # canary: back to @v1 after v1.4.0
     with:
       stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
+      changed-only: true
+      stack-paths: '{"org": ["policies/"]}' # org reads SCP JSON from ../policies
       gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
       target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
       target-account-id: "183691668268"
