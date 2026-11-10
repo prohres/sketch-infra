@@ -1,0 +1,29 @@
+name: terraform-apply
+
+on:
+  push:
+    branches: [develop]
+
+# One apply pipeline at a time: a newer merge waits (its plan must see the previous apply).
+# A run still pending when an even newer one arrives is cancelled — fine, the newest plan covers it.
+concurrency:
+  group: terraform-apply
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  apply:
+    permissions:
+      contents: read
+      id-token: write
+    uses: prohres/ci-templates/.github/workflows/tf-apply.yml@v1
+    with:
+      stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
+      plan-gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
+      plan-target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
+      apply-gha-role-arn: arn:aws:iam::686337362279:role/gha-apply
+      apply-target-role-arn: arn:aws:iam::183691668268:role/org-tf-apply
+      target-account-id: "183691668268"
+      plan-bucket: sketch-tfplans-183691668268
+      plan-prefix: sketch-infra

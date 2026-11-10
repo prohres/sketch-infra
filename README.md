@@ -61,6 +61,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | `policies/` | SCP documents (JSON) | — |
 | `backend.hcl` | shared backend settings (bucket, region, locking); each stack keeps only its `key` | — |
 | `.github/workflows/terraform.yml` | plan for `org/` and `identity/` on every PR via [prohres/ci-templates](https://github.com/prohres/ci-templates) | — |
+| `.github/workflows/terraform-apply.yml` | after merge: plan → approval in `prod` → apply the saved plan, for `org/` and `identity/` | — |
 
 ## Workflow
 
@@ -68,8 +69,10 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 2. Credentials: `aws sso login --sso-session sketch` and `export AWS_PROFILE=sketch-root`.
 3. `terraform init -backend-config=../backend.hcl` in the stack directory.
 4. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
-5. `terraform apply <stack>.tfplan` — apply exactly the reviewed plan.
-6. Follow-up `terraform plan` must show *No changes*; open the PR — CI posts its own plan per stack as a comment.
+5. Open the PR — CI posts its own plan per stack as a comment.
+6. `org/`, `identity/`: after merge CI plans the merged commit, waits for approval in the `prod` environment
+   (plan in the job summary), applies exactly that plan and checks that a follow-up plan is clean.
+7. `bootstrap/`, `ci/` (manual only): `terraform apply <stack>.tfplan` before the PR, follow-up plan must show *No changes*.
 
 ## Design decisions
 
@@ -92,7 +95,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 ## Roadmap
 
 - [ ] Delegated administration from `sketch-admin`, cross-account roles for Terraform
-- [ ] CI: plan on PR, apply after merge (GitHub Actions + OIDC)
+- [x] CI: plan on PR, apply after merge (GitHub Actions + OIDC)
 - [ ] OU Security: log-archive and audit accounts, organization CloudTrail, GuardDuty
 - [ ] OU Policy Staging for testing SCPs
 - [ ] Break-glass access to prod
