@@ -10,12 +10,12 @@ locals {
   gha_roles = {
     "gha-plan" = {
       # PR plans and the scheduled drift check on develop
-      subjects = ["repo:${local.repo}:pull_request", "repo:${local.repo}:ref:refs/heads/develop"]
+      subjects = ["${local.repo_sub}:pull_request", "${local.repo_sub}:ref:refs/heads/develop"]
       target   = local.org_role_arns["org-tf-plan"]
     }
     "gha-apply" = {
       # Only jobs that passed the prod environment approval
-      subjects = ["repo:${local.repo}:environment:prod"]
+      subjects = ["${local.repo_sub}:environment:prod"]
       target   = local.org_role_arns["org-tf-apply"]
     }
   }
@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "gha_trust" {
       values   = ["sts.amazonaws.com"]
     }
     condition {
-      test     = "StringEquals" # exact subjects, never repo:...:* (any branch could skip the approval)
+      test     = "StringEquals" # exact subjects, never a wildcard (any branch could skip the approval)
       variable = "token.actions.githubusercontent.com:sub"
       values   = each.value.subjects
     }
