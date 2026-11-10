@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "aws" {
-  region              = "eu-central-1"   # IAM is global: region only selects the API endpoint
+  region              = "eu-central-1"   # IAM is global; the plan bucket is regional and lives here
   allowed_account_ids = ["183691668268"] # org-tf roles live in the management account
   default_tags {
     tags = { project = "sketch", stack = "ci", managed-by = "terraform" }
