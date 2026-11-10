@@ -73,6 +73,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 6. `org/`, `identity/`: after merge CI plans the merged commit, waits for approval in the `prod` environment
    (plan in the job summary), applies exactly that plan and checks that a follow-up plan is clean.
 7. `bootstrap/`, `ci/` (manual only): `terraform apply <stack>.tfplan` before the PR, follow-up plan must show *No changes*.
+8. Daily drift check (`org/`, `identity/`): a drifted stack gets a "Drift detected: <stack>" issue; fix by apply or by changing the code.
 
 ## Design decisions
 
@@ -92,6 +93,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | Partial backend config (`backend.hcl`) | backend blocks can't use variables; bucket, region and locking live in one file, used the same way locally and in CI |
 | Saved plans in a private S3 bucket (`ci/`), not GitHub artifacts | a plan file holds values in clear text and artifacts of a public repo are downloadable by anyone; 7-day lifecycle, TLS only |
 | Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
+| Drift check: full plan (not `-refresh-only`), no auto-apply, issue holds resource addresses only | catches manual changes and merged-but-unapplied code; drift may be a deliberate hotfix, so a human decides; issues of a public repo are public, the full plan stays in the job summary |
 
 ## Roadmap
 

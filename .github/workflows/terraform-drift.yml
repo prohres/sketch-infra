@@ -1,0 +1,26 @@
+name: terraform-drift
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily 06:00 UTC; runs on the default branch only
+  workflow_dispatch:
+
+# Read-only: a newer check supersedes a running one
+concurrency:
+  group: terraform-drift
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  drift:
+    permissions:
+      contents: read
+      id-token: write
+      issues: write # open / update / close drift issues
+    uses: prohres/ci-templates/.github/workflows/tf-drift.yml@v1
+    with:
+      stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
+      gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
+      target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
+      target-account-id: "183691668268"
