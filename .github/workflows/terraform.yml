@@ -20,6 +20,8 @@ jobs:
     uses: prohres/ci-templates/.github/workflows/tf-plan.yml@v1
     with:
       stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
+      changed-only: true
+      stack-paths: '{"org": ["policies/"]}' # org reads SCP JSON from ../policies
       gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
       target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
       target-account-id: "183691668268"
