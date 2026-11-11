@@ -57,7 +57,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | `bootstrap/` | state bucket (versioned, SSE-S3, S3-native locking) | `bootstrap/terraform.tfstate` |
 | `org/` | OUs, SCPs, accounts | `org/terraform.tfstate` |
 | `identity/` | groups, permission sets, account assignments | `identity/terraform.tfstate` |
-| `ci/` | GitHub Actions OIDC provider and CI roles (sketch-admin → sketch-root); applied manually, never by CI | `ci/terraform.tfstate` |
+| `ci/` | GitHub Actions OIDC provider, CI roles (sketch-admin → sketch-root) and app pipeline roles (kantor); applied manually, never by CI | `ci/terraform.tfstate` |
 | `policies/` | SCP documents (JSON) | — |
 | `backend.hcl` | shared backend settings (bucket, region, locking); each stack keeps only its `key` | — |
 | `.github/workflows/terraform.yml` | plan for `org/` and `identity/` on every PR via [prohres/ci-templates](https://github.com/prohres/ci-templates) | — |
@@ -118,6 +118,7 @@ Remove an account:
 | CI writes only the `org/` and `identity/` state | CI can't change its own trust roots (`ci/`) or the state bucket (`bootstrap/`) |
 | Partial backend config (`backend.hcl`) | backend blocks can't use variables; bucket, region and locking live in one file, used the same way locally and in CI |
 | Saved plans in a private S3 bucket (`ci/`), not GitHub artifacts | a plan file holds values in clear text and artifacts of a public repo are downloadable by anyone; 7-day lifecycle, TLS only |
+| App pipeline roles split by stage (build / deploy-dev / promote) | PRs get no AWS access; only develop can push images, only the `dev` environment can deploy, only the approved `prod` environment can promote (retag) a digest |
 | Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
 | Drift check: full plan (not `-refresh-only`), no auto-apply, issue holds resource addresses only | catches manual changes and merged-but-unapplied code; drift may be a deliberate hotfix, so a human decides; issues of a public repo are public, the full plan stays in the job summary |
 | Plan only changed stacks (`<stack>/`, plus `policies/` for `org`; shared files plan all), one aggregator required check `plan / terraform-ok` | no AWS calls for unrelated changes; a skipped workflow (`paths:`) or skipped job would leave a required check waiting forever |
