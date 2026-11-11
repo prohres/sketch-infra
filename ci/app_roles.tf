@@ -3,7 +3,7 @@
 locals {
   app_repo_sub   = "repo:prohres@38884861/kantor@132234591" # immutable subject, as for sketch-infra
   dev_account_id = "699353518928"
-  app_ecr_arn    = "arn:aws:ecr:eu-central-1:686337362279:repository/kantor" # created by itca-kantor
+  app_ecr_arn    = "arn:aws:ecr:eu-central-1:686337362279:repository/kantor" # created by kantor-infra
 
   app_roles = {
     "gha-app-build"      = ["${local.app_repo_sub}:ref:refs/heads/develop"] # push after merge; PRs get no AWS access
@@ -72,7 +72,7 @@ data "aws_iam_policy_document" "app_permissions" {
   dynamic "statement" {
     for_each = each.key == "gha-app-deploy-dev" ? [1] : []
     content {
-      actions   = ["sts:AssumeRole", "sts:TagSession"] # created by itca-kantor in sketch-dev
+      actions   = ["sts:AssumeRole", "sts:TagSession"] # created by kantor-infra in sketch-dev
       resources = ["arn:aws:iam::${local.dev_account_id}:role/app-deploy"]
     }
   }
