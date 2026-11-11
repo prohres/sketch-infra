@@ -1,13 +1,9 @@
-# CI roles for the kantor app repo (sketch-admin). Build touches only the ECR repo in this account;
+# CI roles for the kantor app repo (sketch-admin). Build pushes only to the kantor repository in sketch-dev;
 # deploy chains into one role in the workload account.
 locals {
   app_repo_sub   = "repo:prohres@38884861/kantor@132234591" # immutable subject, as for sketch-infra
   dev_account_id = var.dev_account_id
-  # Created by kantor-infra; moving from sketch-admin to sketch-dev: drop the admin ARN after the move
-  app_ecr_arns = [
-    "arn:aws:ecr:eu-central-1:${var.admin_account_id}:repository/kantor",
-    "arn:aws:ecr:eu-central-1:${var.dev_account_id}:repository/kantor",
-  ]
+  app_ecr_arn    = "arn:aws:ecr:eu-central-1:${var.dev_account_id}:repository/kantor" # created by kantor-infra (sketch-dev)
 
   app_roles = {
     "gha-app-build"      = ["${local.app_repo_sub}:ref:refs/heads/develop"] # push after merge; PRs get no AWS access
@@ -59,7 +55,7 @@ data "aws_iam_policy_document" "app_permissions" {
     content {
       actions = ["ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart",
       "ecr:CompleteLayerUpload", "ecr:PutImage", "ecr:BatchGetImage", "ecr:DescribeImages", "ecr:DescribeRepositories"]
-      resources = local.app_ecr_arns
+      resources = [local.app_ecr_arn]
     }
   }
 
