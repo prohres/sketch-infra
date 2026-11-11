@@ -11,7 +11,7 @@ terraform {
 
 provider "aws" {
   region              = "eu-central-1"   # IAM is global; the plan bucket is regional and lives here
-  allowed_account_ids = ["183691668268"] # org-tf roles live in the management account
+  allowed_account_ids = [var.account_id] # org-tf roles live in the management account
   default_tags {
     tags = { project = "sketch", stack = "ci", managed-by = "terraform" }
   }
@@ -21,9 +21,9 @@ provider "aws" {
 provider "aws" {
   alias               = "admin"
   region              = "eu-central-1" # IAM is global: region only selects the API endpoint
-  allowed_account_ids = ["686337362279"]
+  allowed_account_ids = [var.admin_account_id]
   assume_role {
-    role_arn = "arn:aws:iam::686337362279:role/OrganizationAccountAccessRole"
+    role_arn = "arn:aws:iam::${var.admin_account_id}:role/OrganizationAccountAccessRole"
   }
   default_tags {
     tags = { project = "sketch", stack = "ci", managed-by = "terraform" }

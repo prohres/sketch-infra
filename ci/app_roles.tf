@@ -2,8 +2,8 @@
 # in this account; deploy chains into one role in the workload account.
 locals {
   app_repo_sub   = "repo:prohres@38884861/kantor@132234591" # immutable subject, as for sketch-infra
-  dev_account_id = "699353518928"
-  app_ecr_arn    = "arn:aws:ecr:eu-central-1:686337362279:repository/kantor" # created by kantor-infra
+  dev_account_id = var.dev_account_id
+  app_ecr_arn    = "arn:aws:ecr:eu-central-1:${var.admin_account_id}:repository/kantor" # created by kantor-infra
 
   app_roles = {
     "gha-app-build"      = ["${local.app_repo_sub}:ref:refs/heads/develop"] # push after merge; PRs get no AWS access

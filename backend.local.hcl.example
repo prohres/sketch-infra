@@ -1,0 +1,3 @@
+# Copy to backend.local.hcl (not in git) and fill in the management account id.
+# A placeholder left here makes init fail with "Backend configuration changed": fix the value, don't -reconfigure.
+bucket = "sketch-tfstate-<management-account-id>"

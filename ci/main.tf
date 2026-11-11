@@ -2,8 +2,8 @@
 locals {
   # Immutable subject (owner and repo IDs): a re-created repo with the same name can't reuse these roles
   repo_sub        = "repo:prohres@38884861/sketch-infra@1451086492"
-  root_account_id = "183691668268"
-  state_bucket    = "sketch-tfstate-183691668268"
+  root_account_id = var.account_id
+  state_bucket    = "sketch-tfstate-${var.account_id}"
 
   # Built as strings: the org roles trust the gha roles by reference, so referencing back would form a cycle
   org_role_arns = {

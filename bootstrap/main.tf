@@ -7,7 +7,7 @@ terraform {
 
 provider "aws" {
   region              = "eu-central-1"
-  allowed_account_ids = ["183691668268"] # guardrail: management account only
+  allowed_account_ids = [var.account_id] # guardrail: management account only
   default_tags {
     tags = { project = "sketch", stack = "bootstrap", managed-by = "terraform" }
   }
@@ -16,8 +16,8 @@ provider "aws" {
 resource "aws_s3_bucket" "tfstate" {
   #checkov:skip=CKV_AWS_18:Access logs need a separate log bucket; revisit with a log-archive account
   #checkov:skip=CKV_AWS_145:SSE-S3 on purpose (no KMS cost); access is limited by IAM
-  bucket = "sketch-tfstate-183691668268" # account id suffix keeps the name globally unique
-  lifecycle { prevent_destroy = true }   # protect all stacks' state from accidental destroy
+  bucket = "sketch-tfstate-${var.account_id}" # account id suffix keeps the name globally unique
+  lifecycle { prevent_destroy = true }        # protect all stacks' state from accidental destroy
 }
 
 resource "aws_s3_bucket_versioning" "tfstate" {

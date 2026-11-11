@@ -12,6 +12,7 @@ concurrency:
 
 permissions: {}
 
+# Account ids are repo variables (Settings → Variables), not code: the repo is public.
 jobs:
   apply:
     permissions:
@@ -20,10 +21,11 @@ jobs:
     uses: prohres/ci-templates/.github/workflows/tf-apply.yml@v1
     with:
       stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
-      plan-gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
-      plan-target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
-      apply-gha-role-arn: arn:aws:iam::686337362279:role/gha-apply
-      apply-target-role-arn: arn:aws:iam::183691668268:role/org-tf-apply
-      target-account-id: "183691668268"
-      plan-bucket: sketch-tfplans-183691668268
+      plan-gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-plan
+      plan-target-role-arn: arn:aws:iam::${{ vars.ROOT_ACCOUNT_ID }}:role/org-tf-plan
+      apply-gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-apply
+      apply-target-role-arn: arn:aws:iam::${{ vars.ROOT_ACCOUNT_ID }}:role/org-tf-apply
+      target-account-id: ${{ vars.ROOT_ACCOUNT_ID }}
+      plan-bucket: sketch-tfplans-${{ vars.ROOT_ACCOUNT_ID }}
+      backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}
       plan-prefix: sketch-infra

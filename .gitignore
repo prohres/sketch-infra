@@ -4,3 +4,5 @@
 *.tfplan
 crash.log
 accounts.auto.tfvars
+backend.local.hcl
+accounts.env
