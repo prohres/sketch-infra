@@ -54,10 +54,10 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 
 | Path | Stack | State key |
 |---|---|---|
-| `bootstrap/` | state bucket (versioned, SSE-S3, S3-native locking) | `bootstrap/terraform.tfstate` |
+| `bootstrap/` | state bucket (versioned, SSE-S3, S3-native locking); bucket policy: kantor-infra CI reaches only its own key | `bootstrap/terraform.tfstate` |
 | `org/` | OUs, SCPs, accounts | `org/terraform.tfstate` |
 | `identity/` | groups, permission sets, account assignments | `identity/terraform.tfstate` |
-| `ci/` | GitHub Actions OIDC provider, CI roles (sketch-admin → sketch-root) and app pipeline roles (kantor); applied manually, never by CI | `ci/terraform.tfstate` |
+| `ci/` | GitHub Actions OIDC provider, CI roles (sketch-admin → sketch-root, and → sketch-dev for kantor-infra), app pipeline roles (kantor) and the kantor-infra permissions boundary; applied manually, never by CI | `ci/terraform.tfstate` |
 | `policies/` | SCP documents (JSON) | — |
 | `backend.hcl` | shared backend settings (region, locking); each stack keeps only its `key` | — |
 | `*.example` | templates for the local files kept out of git: `backend.local.hcl` (state bucket), `accounts.env` (account ids as `TF_VAR_*`) | — |
@@ -128,6 +128,8 @@ Remove an account:
 | Plan only changed stacks (`<stack>/`, plus `policies/` for `org`; shared files plan all), one aggregator required check `plan / terraform-ok` | no AWS calls for unrelated changes; a skipped workflow (`paths:`) or skipped job would leave a required check waiting forever |
 | Root emails from a private one-line template in the state bucket, checked by preconditions | adding an account is one line of code; the address is never in git or CI secrets; a wrong template fails the plan with a message that names the account, not the address, before an email change could replace (close) an account |
 | Centralized root access, enabled by hand | new member accounts have no root credentials, so knowing a root email is no way in |
+| CI roles of other repos live in `ci/`, not in those repos | a stack that is destroyed between sessions must not delete the roles it runs as |
+| kantor-infra CI: PowerUserAccess + IAM only on the stack's two roles, only with a permissions boundary | CI can build the whole stack but can't escalate through IAM: whatever it writes on those roles is capped by a boundary it can't change |
 
 ## Roadmap
 

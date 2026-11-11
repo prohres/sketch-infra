@@ -17,3 +17,8 @@ output "app_role_arns" {
   description = "Roles the kantor workflows assume via OIDC (role-to-assume)"
   value       = { for name, role in aws_iam_role.app : name => role.arn }
 }
+
+output "kantor_tf_role_arns" {
+  description = "Roles kantor-infra CI chains into in sketch-dev (target-role-arn)"
+  value       = { for name, role in aws_iam_role.kantor_tf : name => role.arn }
+}

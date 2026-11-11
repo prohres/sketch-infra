@@ -1,5 +1,5 @@
-# GitHub Actions identity in the CI hub (sketch-admin). These roles can do nothing
-# except assume their one counterpart in the management account.
+# GitHub Actions identity in the CI hub (sketch-admin). These roles can do nothing except assume their
+# one counterpart: in the management account (sketch-infra) or in sketch-dev (kantor-infra).
 resource "aws_iam_openid_connect_provider" "github" {
   provider       = aws.admin
   url            = "https://token.actions.githubusercontent.com"
@@ -17,6 +17,16 @@ locals {
       # Only jobs that passed the org-apply environment approval
       subjects = ["${local.repo_sub}:environment:org-apply"]
       target   = local.org_role_arns["org-tf-apply"]
+    }
+    "gha-kantor-plan" = {
+      # kantor-infra: PR plans, plans after merge, drift check on develop
+      subjects = ["${local.kantor_infra_sub}:pull_request", "${local.kantor_infra_sub}:ref:refs/heads/develop"]
+      target   = "arn:aws:iam::${var.dev_account_id}:role/kantor-tf-plan"
+    }
+    "gha-kantor-apply" = {
+      # kantor-infra: apply after approval (dev), up / down and the nightly down (dev-switch)
+      subjects = ["${local.kantor_infra_sub}:environment:dev", "${local.kantor_infra_sub}:environment:dev-switch"]
+      target   = "arn:aws:iam::${var.dev_account_id}:role/kantor-tf-apply"
     }
   }
 }
