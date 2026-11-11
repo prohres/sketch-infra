@@ -29,3 +29,4 @@ jobs:
       plan-bucket: sketch-tfplans-${{ vars.ROOT_ACCOUNT_ID }}
       backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}
       plan-prefix: sketch-infra
+      environment: org-apply # required reviewer; gha-apply trusts only this environment

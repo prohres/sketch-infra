@@ -62,7 +62,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | `backend.hcl` | shared backend settings (region, locking); each stack keeps only its `key` | — |
 | `*.example` | templates for the local files kept out of git: `backend.local.hcl` (state bucket), `accounts.env` (account ids as `TF_VAR_*`) | — |
 | `.github/workflows/terraform.yml` | plan for `org/` and `identity/` on every PR via [prohres/ci-templates](https://github.com/prohres/ci-templates) | — |
-| `.github/workflows/terraform-apply.yml` | after merge: plan → approval in `prod` → apply the saved plan, for `org/` and `identity/` | — |
+| `.github/workflows/terraform-apply.yml` | after merge: plan → approval in `org-apply` → apply the saved plan, for `org/` and `identity/` | — |
 
 ## Workflow
 
@@ -74,7 +74,7 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 4. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
 5. Open the PR — CI runs tflint and checkov (no cloud access), plans only the stacks the PR changed and posts
    the plan per stack as a comment; `plan / terraform-ok` is the required check.
-6. `org/`, `identity/`: after merge CI plans the merged commit, waits for approval in the `prod` environment
+6. `org/`, `identity/`: after merge CI plans the merged commit, waits for approval in the `org-apply` environment
    (plan in the job summary), applies exactly that plan and checks that a follow-up plan is clean.
 7. `bootstrap/`, `ci/` (manual only): `terraform apply <stack>.tfplan` before the PR, follow-up plan must show *No changes*.
 8. Daily drift check (`org/`, `identity/`): a drifted stack gets a "Drift detected: <stack>" issue; fix by apply or by changing the code.
@@ -117,12 +117,12 @@ Remove an account:
 | S3 `use_lockfile` instead of DynamoDB | native locking since Terraform 1.10, DynamoDB locking is deprecated |
 | Manual resources adopted with `import {}`, restructuring via expand → contract | zero-diff adoption and no window without guardrails |
 | No AWS profile in code | credentials come from the environment (`AWS_PROFILE` locally, OIDC role in CI); `allowed_account_ids` still pins the target account |
-| CI identity in `sketch-admin`, two-hop role chain into the management account | the management account trusts one narrow role per action; the OIDC `sub` pins PRs and develop to plan, the `prod` environment to apply |
+| CI identity in `sketch-admin`, two-hop role chain into the management account | the management account trusts one narrow role per action; the OIDC `sub` pins PRs and develop to plan, the `org-apply` environment to apply |
 | CI writes only the `org/` and `identity/` state | CI can't change its own trust roots (`ci/`) or the state bucket (`bootstrap/`) |
 | Partial backend config (`backend.hcl`) | backend blocks can't use variables; region and locking live in one file, used the same way locally and in CI |
 | Account ids and the state bucket out of git (`TF_VAR_*`, `backend.local.hcl`; repo variables in CI) | the repo is public; ids aren't secrets, but they are free reconnaissance |
 | Saved plans in a private S3 bucket (`ci/`), not GitHub artifacts | a plan file holds values in clear text and artifacts of a public repo are downloadable by anyone; 7-day lifecycle, TLS only |
-| App pipeline roles split by stage (build / deploy-dev / promote) | PRs get no AWS access; only develop can push images, only the `dev` environment can deploy, only the approved `prod` environment can promote (retag) a digest |
+| App pipeline roles split by stage (build / deploy-dev) | PRs get no AWS access; only develop can push images, only the `dev` environment can deploy |
 | Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
 | Drift check: full plan (not `-refresh-only`), no auto-apply, issue holds resource addresses only | catches manual changes and merged-but-unapplied code; drift may be a deliberate hotfix, so a human decides; issues of a public repo are public, the full plan stays in the job summary |
 | Plan only changed stacks (`<stack>/`, plus `policies/` for `org`; shared files plan all), one aggregator required check `plan / terraform-ok` | no AWS calls for unrelated changes; a skipped workflow (`paths:`) or skipped job would leave a required check waiting forever |

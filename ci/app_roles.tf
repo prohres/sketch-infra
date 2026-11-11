@@ -1,5 +1,5 @@
-# CI roles for the kantor app repo (sketch-admin). Build and promote touch only the ECR repo
-# in this account; deploy chains into one role in the workload account.
+# CI roles for the kantor app repo (sketch-admin). Build touches only the ECR repo in this account;
+# deploy chains into one role in the workload account.
 locals {
   app_repo_sub   = "repo:prohres@38884861/kantor@132234591" # immutable subject, as for sketch-infra
   dev_account_id = var.dev_account_id
@@ -8,7 +8,6 @@ locals {
   app_roles = {
     "gha-app-build"      = ["${local.app_repo_sub}:ref:refs/heads/develop"] # push after merge; PRs get no AWS access
     "gha-app-deploy-dev" = ["${local.app_repo_sub}:environment:dev"]
-    "gha-app-promote"    = ["${local.app_repo_sub}:environment:prod"] # only after the prod approval
   }
 }
 
@@ -56,15 +55,6 @@ data "aws_iam_policy_document" "app_permissions" {
     content {
       actions = ["ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart",
       "ecr:CompleteLayerUpload", "ecr:PutImage", "ecr:BatchGetImage", "ecr:DescribeImages"]
-      resources = [local.app_ecr_arn]
-    }
-  }
-
-  dynamic "statement" {
-    for_each = each.key == "gha-app-promote" ? [1] : []
-    content {
-      # Retag the already-built digest (batch-get-image + put-image): no docker login, no rebuild
-      actions   = ["ecr:BatchGetImage", "ecr:PutImage", "ecr:DescribeImages"]
       resources = [local.app_ecr_arn]
     }
   }
