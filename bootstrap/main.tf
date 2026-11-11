@@ -51,4 +51,53 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
   }
 }
 
+# kantor-infra runs in sketch-dev: its two CI roles reach their own state key across accounts, nothing else
+locals {
+  kantor_tf = { for r in ["kantor-tf-plan", "kantor-tf-apply"] : r => "arn:aws:iam::${var.dev_account_id}:role/${r}" }
+}
+
+data "aws_iam_policy_document" "tfstate" {
+  statement {
+    sid       = "KantorInfraList"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.tfstate.arn]
+    principals {
+      type        = "AWS"
+      identifiers = values(local.kantor_tf)
+    }
+  }
+  statement {
+    sid       = "KantorInfraRead"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.tfstate.arn}/kantor-infra/*"]
+    principals {
+      type        = "AWS"
+      identifiers = values(local.kantor_tf)
+    }
+  }
+  statement {
+    sid       = "KantorInfraPlanLock"
+    actions   = ["s3:PutObject", "s3:DeleteObject"]
+    resources = ["${aws_s3_bucket.tfstate.arn}/kantor-infra/*.tflock"]
+    principals {
+      type        = "AWS"
+      identifiers = [local.kantor_tf["kantor-tf-plan"]]
+    }
+  }
+  statement {
+    sid       = "KantorInfraApplyWrite"
+    actions   = ["s3:PutObject", "s3:DeleteObject"]
+    resources = ["${aws_s3_bucket.tfstate.arn}/kantor-infra/*"]
+    principals {
+      type        = "AWS"
+      identifiers = [local.kantor_tf["kantor-tf-apply"]]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+  policy = data.aws_iam_policy_document.tfstate.json
+}
+
 output "state_bucket" { value = aws_s3_bucket.tfstate.bucket }

@@ -39,7 +39,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "plans" {
   }
 }
 
-data "aws_iam_policy_document" "plans_tls_only" {
+data "aws_iam_policy_document" "plans" {
   statement {
     sid       = "DenyInsecureTransport"
     effect    = "Deny"
@@ -55,11 +55,29 @@ data "aws_iam_policy_document" "plans_tls_only" {
       values   = ["false"]
     }
   }
+  statement {
+    sid       = "KantorInfraPlanWrites" # cross-account: the role's own policy alone is not enough
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.plans.arn}/kantor-infra/*"]
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.kantor_tf["kantor-tf-plan"].arn]
+    }
+  }
+  statement {
+    sid       = "KantorInfraApplyReads"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.plans.arn}/kantor-infra/*"]
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.kantor_tf["kantor-tf-apply"].arn]
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "plans" {
   bucket = aws_s3_bucket.plans.id
-  policy = data.aws_iam_policy_document.plans_tls_only.json
+  policy = data.aws_iam_policy_document.plans.json
 }
 
 # Plan role writes the saved plan, apply role reads exactly that file back

@@ -21,9 +21,11 @@ data "aws_iam_policy_document" "org_trust" {
   for_each = local.org_roles
   statement {
     actions = ["sts:AssumeRole", "sts:TagSession"]
+    # One role, not the whole account. Built as a string: a reference would defer this document to apply
+    # time whenever any gha role changes, and the plan would show both org roles as changing.
     principals {
       type        = "AWS"
-      identifiers = [aws_iam_role.gha[each.value.caller].arn] # one role, not the whole account
+      identifiers = ["arn:aws:iam::${var.admin_account_id}:role/${each.value.caller}"]
     }
   }
 }
@@ -32,6 +34,7 @@ resource "aws_iam_role" "org" {
   for_each           = local.org_roles
   name               = each.key
   assume_role_policy = data.aws_iam_policy_document.org_trust[each.key].json
+  depends_on         = [aws_iam_role.gha] # the trusted principal must exist
 }
 
 resource "aws_iam_role_policy_attachment" "org" {

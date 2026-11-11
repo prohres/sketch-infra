@@ -29,3 +29,16 @@ provider "aws" {
     tags = { project = "sketch", stack = "ci", managed-by = "terraform" }
   }
 }
+
+# Workload account: kantor-infra CI roles and the permissions boundary of its stack
+provider "aws" {
+  alias               = "dev"
+  region              = "eu-central-1"
+  allowed_account_ids = [var.dev_account_id]
+  assume_role {
+    role_arn = "arn:aws:iam::${var.dev_account_id}:role/OrganizationAccountAccessRole"
+  }
+  default_tags {
+    tags = { project = "sketch", stack = "ci", managed-by = "terraform" }
+  }
+}
