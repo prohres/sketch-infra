@@ -14,8 +14,8 @@ locals {
       target   = local.org_role_arns["org-tf-plan"]
     }
     "gha-apply" = {
-      # Only jobs that passed the prod environment approval
-      subjects = ["${local.repo_sub}:environment:prod"]
+      # Only jobs that passed the org-apply environment approval
+      subjects = ["${local.repo_sub}:environment:org-apply"]
       target   = local.org_role_arns["org-tf-apply"]
     }
   }
