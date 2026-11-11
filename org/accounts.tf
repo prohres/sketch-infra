@@ -1,7 +1,7 @@
 # Root emails follow one private rule kept out of git: a one-line template with an {account} placeholder,
 # uploaded once by hand (README: Accounts). Both CI roles can read it; neither can write outside its state.
 data "aws_s3_object" "account_email_template" {
-  bucket = "sketch-tfstate-183691668268"
+  bucket = "sketch-tfstate-${var.account_id}"
   key    = "config/account-email-template.txt"
 }
 

@@ -12,6 +12,7 @@ concurrency:
 
 permissions: {}
 
+# Account ids are repo variables (Settings → Variables), not code: the repo is public.
 jobs:
   drift:
     permissions:
@@ -21,6 +22,7 @@ jobs:
     uses: prohres/ci-templates/.github/workflows/tf-drift.yml@v1
     with:
       stacks: '["org", "identity"]' # bootstrap/ and ci/ are applied manually only
-      gha-role-arn: arn:aws:iam::686337362279:role/gha-plan
-      target-role-arn: arn:aws:iam::183691668268:role/org-tf-plan
-      target-account-id: "183691668268"
+      gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-plan
+      target-role-arn: arn:aws:iam::${{ vars.ROOT_ACCOUNT_ID }}:role/org-tf-plan
+      target-account-id: ${{ vars.ROOT_ACCOUNT_ID }}
+      backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}

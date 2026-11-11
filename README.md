@@ -59,7 +59,8 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 | `identity/` | groups, permission sets, account assignments | `identity/terraform.tfstate` |
 | `ci/` | GitHub Actions OIDC provider, CI roles (sketch-admin → sketch-root) and app pipeline roles (kantor); applied manually, never by CI | `ci/terraform.tfstate` |
 | `policies/` | SCP documents (JSON) | — |
-| `backend.hcl` | shared backend settings (bucket, region, locking); each stack keeps only its `key` | — |
+| `backend.hcl` | shared backend settings (region, locking); each stack keeps only its `key` | — |
+| `*.example` | templates for the local files kept out of git: `backend.local.hcl` (state bucket), `accounts.env` (account ids as `TF_VAR_*`) | — |
 | `.github/workflows/terraform.yml` | plan for `org/` and `identity/` on every PR via [prohres/ci-templates](https://github.com/prohres/ci-templates) | — |
 | `.github/workflows/terraform-apply.yml` | after merge: plan → approval in `prod` → apply the saved plan, for `org/` and `identity/` | — |
 
@@ -67,7 +68,9 @@ Access is granted to groups only. Humans are read-only in prod; changes there go
 
 1. Branch from `develop` (protected: PR required, no force push).
 2. Credentials: `aws sso login --sso-session sketch` and `export AWS_PROFILE=sketch-root`.
-3. `terraform init -backend-config=../backend.hcl` in the stack directory.
+3. Once: copy `backend.local.hcl.example` and `accounts.env.example` without `.example` and fill them in.
+   In the stack directory: `set -a; . ../accounts.env; set +a` and
+   `terraform init -backend-config=../backend.hcl -backend-config=../backend.local.hcl`.
 4. `terraform plan -out=<stack>.tfplan` — review adds / changes / destroys.
 5. Open the PR — CI runs tflint and checkov (no cloud access), plans only the stacks the PR changed and posts
    the plan per stack as a comment; `plan / terraform-ok` is the required check.
@@ -83,7 +86,7 @@ the pipeline creates the account, and access comes from the identity stack.
 
 One-time setup (management account, by hand):
 - Private email template: one line with an `{account}` placeholder at
-  `s3://sketch-tfstate-183691668268/config/account-email-template.txt` (`--content-type text/plain`).
+  `s3://sketch-tfstate-<management-account-id>/config/account-email-template.txt` (`--content-type text/plain`).
   It is not in git; if lost, write it again from the same rule.
 - Centralized root access: `aws organizations enable-aws-service-access --service-principal iam.amazonaws.com`,
   `aws iam enable-organizations-root-credentials-management`, `aws iam enable-organizations-root-sessions`.
@@ -116,7 +119,8 @@ Remove an account:
 | No AWS profile in code | credentials come from the environment (`AWS_PROFILE` locally, OIDC role in CI); `allowed_account_ids` still pins the target account |
 | CI identity in `sketch-admin`, two-hop role chain into the management account | the management account trusts one narrow role per action; the OIDC `sub` pins PRs and develop to plan, the `prod` environment to apply |
 | CI writes only the `org/` and `identity/` state | CI can't change its own trust roots (`ci/`) or the state bucket (`bootstrap/`) |
-| Partial backend config (`backend.hcl`) | backend blocks can't use variables; bucket, region and locking live in one file, used the same way locally and in CI |
+| Partial backend config (`backend.hcl`) | backend blocks can't use variables; region and locking live in one file, used the same way locally and in CI |
+| Account ids and the state bucket out of git (`TF_VAR_*`, `backend.local.hcl`; repo variables in CI) | the repo is public; ids aren't secrets, but they are free reconnaissance |
 | Saved plans in a private S3 bucket (`ci/`), not GitHub artifacts | a plan file holds values in clear text and artifacts of a public repo are downloadable by anyone; 7-day lifecycle, TLS only |
 | App pipeline roles split by stage (build / deploy-dev / promote) | PRs get no AWS access; only develop can push images, only the `dev` environment can deploy, only the approved `prod` environment can promote (retag) a digest |
 | Static checks (tflint, checkov) in a job without AWS credentials; repo-wide skips in `.checkov.yaml`, per-resource skips inline with a reason | linters and their dependencies never see AWS credentials; every finding is fixed or skipped with a written reason, never silently ignored |
